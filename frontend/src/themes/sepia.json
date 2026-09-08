@@ -1,0 +1,24 @@
+{
+  "cle": "sepia",
+  "nom": "Sépia",
+  "description": "Clair et chaud, faible contraste. Fatigue moins les yeux sur un écran très lumineux, au prix d'un texte un peu moins net.",
+  "sombre": false,
+  "accent_par_defaut": "#8a5a2b",
+  "variables": {
+    "--bg-app": "#efe6d6",
+    "--bg-panel": "#fdf7ea",
+    "--bg-panel-alt": "#f6eedd",
+    "--ink": "#2f2519",
+    "--ink-soft": "#6b5b46",
+    "--ink-faint": "#998770",
+    "--amber": "#b57a1e",
+    "--amber-soft": "#f3e3c2",
+    "--brick": "#a4442c",
+    "--brick-soft": "#f2dbd2",
+    "--data": "#8a5a2b",
+    "--data-soft": "#eadcc6",
+    "--line": "#ddd0b8",
+    "--line-strong": "#bfae91",
+    "--shadow-panel": "0 12px 32px -12px rgba(47, 37, 25, 0.3)"
+  }
+}

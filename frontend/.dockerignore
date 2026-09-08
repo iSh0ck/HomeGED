@@ -1,0 +1,16 @@
+# `COPY . .` recopiait `node_modules` dans l'image de construction — 195 Mo
+# inutiles, puisque l'étape précédente vient de les installer avec `npm ci`, et
+# une nouvelle entrée de cache à chaque construction. Pire : les modules de la
+# machine hôte pouvaient masquer ceux du verrou, et l'image se construisait sur
+# autre chose que ce qui a été testé.
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Images mémoire laissées par un processus qui a planté (§22.54). Le noyau les
+# écrit dans le répertoire de travail — celui du conteneur, donc ce dossier
+# monté — et elles pèsent la mémoire entière du processus : 4,6 Go retrouvés
+# une fois. Elles n'ont rien à faire dans un contexte de construction.
+core
+core.*

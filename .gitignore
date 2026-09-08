@@ -1,0 +1,34 @@
+# Secrets — ne jamais committer (.env.example sert de modèle)
+.env
+
+# Données locales : PDF archivés et dépôt du scanner
+storage/
+ocr_wait/
+apercus/
+travaux/
+exports/
+*.pdf
+*.zip
+
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# Divers
+.DS_Store
+*.log
+
+# Tests
+.pytest_cache/
+sauvegardes/
+
+# Images mémoire d'un processus qui a planté.
+core
+core.*

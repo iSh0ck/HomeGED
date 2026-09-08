@@ -1,0 +1,24 @@
+{
+  "cle": "contraste",
+  "nom": "Contraste élevé",
+  "description": "Noir sur blanc, traits marqués. Pour une vue fatiguée, un écran de mauvaise qualité, ou une pièce en plein soleil.",
+  "sombre": false,
+  "accent_par_defaut": "#12507a",
+  "variables": {
+    "--bg-app": "#ffffff",
+    "--bg-panel": "#ffffff",
+    "--bg-panel-alt": "#f0f0f0",
+    "--ink": "#000000",
+    "--ink-soft": "#2b2b2b",
+    "--ink-faint": "#575757",
+    "--amber": "#8a5300",
+    "--amber-soft": "#ffe6b8",
+    "--brick": "#a80000",
+    "--brick-soft": "#ffd6d6",
+    "--data": "#12507a",
+    "--data-soft": "#cfe2ef",
+    "--line": "#8c8c8c",
+    "--line-strong": "#3d3d3d",
+    "--shadow-panel": "0 8px 24px -10px rgba(0, 0, 0, 0.55)"
+  }
+}

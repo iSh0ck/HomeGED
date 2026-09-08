@@ -1,0 +1,26 @@
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+sqlalchemy==2.0.52
+pymysql==1.2.0
+watchdog==6.0.0
+pdfminer.six==20260107
+ocrmypdf==17.11.0
+pikepdf>=10,<11
+img2pdf==0.6.3
+pydantic==2.13.5
+# PyJWT remplace python-jose, abandonné depuis 2021 (cf. IMPLEMENTATION_PLAN 17.11)
+PyJWT==2.13.0
+# Ces deux versions sont figées ensemble, et c'est vérifié plutôt que supposé :
+# passlib 1.7.4 avec bcrypt 5.0.0 lève « password cannot be longer than 72 bytes »
+# dès la première vérification de mot de passe — personne ne pourrait plus se
+# connecter. `libpass`, le fork maintenu de passlib, a été essayé : sa version
+# 1.9.3 ne sait vérifier ni les empreintes de passlib, ni les siennes propres
+# (essais avec bcrypt 4.0.1, 4.2.1 et 5.0.0). À reprendre plus tard.
+#
+# Contrainte associée : passlib importe le module `crypt`, retiré de Python 3.13.
+# L'image reste donc en 3.12 (cf. Dockerfile).
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-multipart==0.0.32
+# QR code d'appairage de la double authentification (SVG, sans dépendance graphique)
+qrcode==8.2

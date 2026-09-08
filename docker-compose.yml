@@ -1,0 +1,189 @@
+# Journalisation des conteneurs.
+#
+# Le pilote `json-file` de Docker écrit sur l'hôte, dans
+# /var/lib/docker/containers/<id>/<id>-json.log, et **sans limite par défaut** :
+# le fichier grossit tant que le conteneur tourne. Celui du frontend est le plus
+# exposé, nginx y consignant chaque requête HTTP.
+#
+# 10 Mo par fichier, 5 fichiers conservés : 50 Mo au pire par conteneur, 200 Mo
+# pour l'installation entière. Docker fait tourner les fichiers lui-même, aucun
+# logrotate à prévoir.
+x-journalisation: &journalisation
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  db:
+    image: mariadb:12
+    restart: unless-stopped
+    logging: *journalisation
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-changeme_root}
+      MARIADB_DATABASE: ${DB_NAME:-homeged}
+      MARIADB_USER: ${DB_USER:-homeged}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    ports:
+      # 127.0.0.1 uniquement : la base ne doit pas être joignable depuis le
+      # réseau local, seuls les autres conteneurs en ont besoin (via `db:3306`).
+      - "127.0.0.1:3307:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  worker:
+    build: .
+    restart: unless-stopped
+    logging: *journalisation
+    command: python -m app.worker
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER:-homeged}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      DB_NAME: ${DB_NAME:-homeged}
+      OCR_WAIT_FOLDER: /data/ocr_wait
+      STORAGE_FOLDER: /data/storage
+      EXPORT_FOLDER: /data/exports
+      TRAVAUX_FOLDER: /data/travaux
+      APERCUS_FOLDER: /data/apercus
+      DEPOTS_MANUELS_FOLDER: /data/depots_manuels
+      PDF_OPTIMISATION: ${PDF_OPTIMISATION:-2}
+      COMPRESSION_LOT: ${COMPRESSION_LOT:-5}
+      RESOLUTION_CIBLE: ${RESOLUTION_CIBLE:-300}
+      OCR_STRATEGIE: ${OCR_STRATEGIE:-auto}
+      # Combien de documents océrisés en même temps (§22.41). Vide : la moitié
+      # des cœurs, quatre au plus. Le traitement passe dans des sous-processus,
+      # quelques fils suffisent donc à occuper plusieurs cœurs.
+      TRAVAUX_PARALLELES: ${TRAVAUX_PARALLELES:-}
+      # Un fil par océrisation, et non un par cœur : sans cela, chaque tesseract
+      # réclame la machine entière et les traitements simultanés se la disputent
+      # au lieu de se la partager.
+      OMP_THREAD_LIMIT: 1
+    volumes:
+      # Dépôt : un dossier par type de document, tenu par la GED (§19.2).
+      - ./ocr_wait:/data/ocr_wait
+      # Fichiers déposés **à la main** sur une fiche simple (§22.1) : ils
+      # n'entrent pas par ocr_wait — leur type est dit au moment du dépôt, pas
+      # par un dossier. L'API les y écrit, le serveur de travaux les reprend.
+      - ./depots_manuels:/data/depots_manuels
+      - ./storage:/data/storage  # <- archivage final des PDF océrisés
+      # Fichiers reçus, conservés le temps que vit leur travail (§18.53) : le PDF
+      # archivé n'en est pas une copie, l'océrisation et la compression le
+      # réécrivent. Le serveur de travaux y écrit, l'API s'y contente de lire.
+      - ./travaux:/data/travaux
+      # Miniatures (§19.20) : l'API les rend, le serveur balaie celles dont plus
+      # aucun document ne répond.
+      - ./apercus:/data/apercus
+      # Archives produites (§17.30, §21.13). Le serveur de travaux construit
+      # l'export par modèle — cinq cents PDF ne se compressent pas dans une
+      # requête HTTP —, l'API sert le fichier. Sans ce volume partagé, elle
+      # cherchait une archive écrite dans un système de fichiers qui n'est pas
+      # le sien : demande « prête », téléchargement introuvable.
+      - ./exports:/data/exports
+      # Copie de secours (§22.49) : la base et les archives, écrites par le
+      # serveur de travaux. Monter ici un disque externe ou un partage réseau
+      # met la sauvegarde hors du disque qu'elle protège — c'est tout l'intérêt.
+      - ./sauvegardes:/data/sauvegardes
+
+  api:
+    build: .
+    restart: unless-stopped
+    logging: *journalisation
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER:-homeged}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      DB_NAME: ${DB_NAME:-homeged}
+      SECRET_KEY: ${SECRET_KEY:?merci de définir SECRET_KEY dans .env}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@homeged.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?merci de définir ADMIN_PASSWORD dans .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081,http://localhost:5173}
+      LOGIN_MAX_TENTATIVES: ${LOGIN_MAX_TENTATIVES:-5}
+      LOGIN_FENETRE_SECONDES: ${LOGIN_FENETRE_SECONDES:-900}
+      LOGIN_VERROUILLAGE_SECONDES: ${LOGIN_VERROUILLAGE_SECONDES:-900}
+      STORAGE_FOLDER: /data/storage
+      TRAVAUX_FOLDER: /data/travaux
+      OCR_WAIT_FOLDER: /data/ocr_wait
+      APERCUS_FOLDER: /data/apercus
+      DEPOTS_MANUELS_FOLDER: /data/depots_manuels
+      THEMES_FOLDER: /data/themes
+      LANGUES_FOLDER: /data/langues
+    volumes:
+      # Miniatures de première page (§19.20) : un cache, pas une archive. Le
+      # vider ne perd rien — il coûte une seconde par document au prochain
+      # affichage. L'API y écrit puisque c'est elle qui les rend, à la demande.
+      - ./apercus:/data/apercus
+      # L'administration crée et renomme les dossiers de dépôt (§19.2), et
+      # listera ce qui s'y trouve à tort (§19.5). Elle n'y traite aucun fichier :
+      # c'est le serveur de travaux qui les lit.
+      - ./ocr_wait:/data/ocr_wait
+      # Fichiers reçus (§18.53). En écriture depuis le §22.1b : supprimer un
+      # travail doit emporter son fichier **au moment du clic**, comme la
+      # fenêtre de confirmation l'annonce, et non cinq minutes plus tard au
+      # balayage des orphelins. L'API n'y écrit rien d'autre — elle efface le
+      # dossier du travail supprimé, dont le chemin est recomposé à partir de
+      # l'identifiant et jamais lu depuis la base.
+      - ./travaux:/data/travaux
+      # Ce que l'on glisse à la main sur une fiche (§22.1). C'est le seul endroit
+      # où l'API **dépose** un fichier reçu : elle le pose, le serveur de travaux le
+      # reprend et l'archive — les archives, elles, restent hors de sa portée.
+      - ./depots_manuels:/data/depots_manuels
+      # Archives en lecture seule : l'API sert les PDF, elle ne peut pas les altérer.
+      - ./storage:/data/storage:ro
+      # Seule la corbeille est accessible en écriture, pour que l'administrateur
+      # puisse la vider depuis l'interface sans exposer les archives elles-mêmes.
+      - ./storage/.corbeille:/data/storage/.corbeille
+      # Exports (§17.30) : une archive demandée doit survivre au redémarrage qui
+      # sépare sa création de son téléchargement. Elle s'efface d'elle-même
+      # ensuite — une seule fois téléchargée, ou expirée.
+      - ./exports:/data/exports
+      # L'API liste les sauvegardes et peut en déclencher une (§22.49).
+      - ./sauvegardes:/data/sauvegardes
+      # Palettes et traductions ajoutées par le foyer (§22.50, §22.51) : un
+      # fichier JSON déposé ici apparaît dans les réglages au rechargement de la
+      # page. En lecture seule — l'application les lit, elle n'y écrit jamais.
+      - ./themes:/data/themes:ro
+      - ./langues:/data/langues:ro
+    ports:
+      # 127.0.0.1 uniquement, comme la base (§22.38) : le seul client de l'API
+      # est le proxy nginx, qui l'atteint par le réseau Docker (`api:8000`) et
+      # non par ce port. Publiée sur toutes les interfaces, elle était joignable
+      # depuis le réseau local **sans passer par le proxy** — donc sans les
+      # en-têtes de sécurité, et avec un `X-Real-IP` forgeable qui rendait la
+      # limitation des tentatives de connexion contournable.
+      # 8000 est déjà pris sur cet hôte par un autre projet.
+      - "127.0.0.1:8001:8000"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    logging: *journalisation
+    depends_on:
+      - api
+    volumes:
+      # Journal d'accès nginx en clair, à chemin stable : c'est la source que
+      # fail2ban surveille (voir deploiement/fail2ban/). Sa rotation est confiée
+      # à logrotate sur l'hôte — Docker ne fait tourner que ce qu'il collecte
+      # lui-même, pas un fichier écrit dans un volume.
+      - ./logs/nginx:/var/log/homeged
+    ports:
+      - "8081:80"   # interface web sur http://localhost:8081
+
+volumes:
+  db_data:

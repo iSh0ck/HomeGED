@@ -1,0 +1,24 @@
+{
+  "cle": "ardoise",
+  "nom": "Ardoise",
+  "description": "Sombre et froid, bleu-gris. Les couleurs d'état ressortent davantage que sur Nuit : à préférer quand on surveille des traitements.",
+  "sombre": true,
+  "accent_par_defaut": "#4a7fa5",
+  "variables": {
+    "--bg-app": "#13181d",
+    "--bg-panel": "#1b2229",
+    "--bg-panel-alt": "#222b33",
+    "--ink": "#e4eaf0",
+    "--ink-soft": "#a8b4c0",
+    "--ink-faint": "#74828f",
+    "--amber": "#e0a44a",
+    "--amber-soft": "#3a2f1d",
+    "--brick": "#e07a6a",
+    "--brick-soft": "#3b2422",
+    "--data": "#57a8d8",
+    "--data-soft": "#1e3340",
+    "--line": "#2b343d",
+    "--line-strong": "#41505c",
+    "--shadow-panel": "0 12px 32px -12px rgba(0, 0, 0, 0.7)"
+  }
+}

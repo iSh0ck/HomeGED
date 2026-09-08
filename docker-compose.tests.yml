@@ -1,0 +1,29 @@
+# Service de test (§18.34).
+#
+# Même image que l'application, plus les dépendances de test — installées une
+# fois dans une couche d'image, et non à chaque exécution. Le service n'est
+# jamais démarré par `docker compose up` : il n'existe que pour
+# `scripts_tests.sh`, qui l'appelle en `run --rm`.
+
+services:
+  tests:
+    build:
+      context: .
+      target: tests
+    profiles: ["tests"]        # jamais démarré par un `up` ordinaire
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER:-homeged}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      # Les archives, en lecture seule : la suite éprouve des fonctions qui
+      # regardent le disque (supervision, corbeille, export). Sans ce montage,
+      # elles s'exécutent sur un chemin absent et ne vérifient plus rien —
+      # l'écart s'est vu au premier lancement sur cette image.
+      - ./storage:/data/storage:ro
+      - ./tests:/srv/tests:ro
+      - ./app:/srv/app:ro
+      - ./db:/srv/db:ro
+      - ./pytest.ini:/srv/pytest.ini:ro

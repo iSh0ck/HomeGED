@@ -1,0 +1,40 @@
+# Jail fail2ban pour HomeGED.
+#
+# ATTENTION AU POINT LE PLUS PIÉGEUX : un service publié par Docker n'est pas
+# atteint par les règles que fail2ban place d'ordinaire dans la chaîne INPUT.
+# Le trafic vers un conteneur est **routé**, donc traité par FORWARD, et Docker
+# y insère ses propres règles avant. Une configuration par défaut donnerait des
+# bannissements visibles dans `fail2ban-client status` et parfaitement inutiles.
+#
+# D'où `chain = DOCKER-USER` : cette chaîne est prévue par Docker exactement
+# pour cela, et elle est traversée avant ses règles de publication.
+
+[homeged-auth]
+enabled  = true
+filter   = homeged-auth
+
+# Chemin à adapter si le projet n'est pas dans /home/shk/homeged.
+logpath  = /home/shk/homeged/logs/nginx/acces.log
+
+# Le port publié dans docker-compose.yml. `allports` reste plus sûr : un
+# attaquant écarté du 8081 n'a aucune raison d'être toléré ailleurs.
+port     = 8081
+banaction = iptables-allports[chain="DOCKER-USER"]
+
+# 10 échecs en 10 minutes : au-delà du seuil applicatif (5 tentatives par
+# quart d'heure), pour que fail2ban n'intervienne que sur de l'acharnement
+# manifeste et jamais sur un mot de passe oublié.
+maxretry = 10
+findtime = 10m
+bantime  = 1h
+
+# Bannissement progressif : chaque récidive allonge la peine, jusqu'à une
+# semaine. Un balayage automatique s'épuise, un utilisateur légitime n'y arrive
+# jamais.
+bantime.increment = true
+bantime.maxtime   = 1w
+
+# Le réseau local n'est jamais banni : se verrouiller soi-même hors de sa
+# propre GED depuis son salon serait le résultat le plus probable sans cela.
+# À adapter à votre plan d'adressage.
+ignoreip = 127.0.0.1/8 ::1 192.168.0.0/16 10.0.0.0/8 172.16.0.0/12

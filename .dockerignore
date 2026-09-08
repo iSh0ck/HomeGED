@@ -1,0 +1,27 @@
+# Ce qui n'a rien à faire dans le contexte de construction de l'API et du
+# serveur de travaux (leur Dockerfile ne copie que `app/` et `db/`).
+#
+# Sans ce fichier, chaque `docker compose build` envoyait ~200 Mo au démon —
+# dont les 195 Mo de `frontend/node_modules` — pour n'en garder que 10. C'est du
+# temps à chaque construction, et de l'espace dans le cache de BuildKit, qui ne
+# se purge jamais tout seul.
+
+frontend/
+node_modules/
+
+# Données de l'installation : elles vivent dans des volumes, pas dans l'image.
+ocr_wait/
+depots_manuels/
+storage/
+travaux/
+apercus/
+exports/
+sauvegardes/
+logs/
+
+.git/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/

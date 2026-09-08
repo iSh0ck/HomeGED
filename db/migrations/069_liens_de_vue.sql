@@ -1,0 +1,15 @@
+-- Le lien déclaré sur la vue (§22.5).
+--
+-- C'est la « correspondance de champs » d'EzGED, et le dernier morceau de son
+-- modèle qui nous manquait : depuis une vue, ouvrir une autre vue **filtrée sur
+-- la ligne qu'on regarde**. « Depuis mes membres du foyer, voir ses factures » ;
+-- « depuis mes véhicules, voir leurs entretiens ».
+--
+-- Ce n'est pas un lien entre documents (§22.4) ni un rapprochement par valeur
+-- partagée (§19.19) : c'est un **chemin de navigation**, déclaré une fois par
+-- l'administration, et qui vaut ensuite pour toutes les lignes de la vue.
+--
+-- Stocké en JSON dans la vue plutôt que dans une table à part : une déclaration
+-- n'a de sens que portée par sa vue, elle disparaît avec elle, et personne ne
+-- la cherchera ailleurs.
+ALTER TABLE sys_vues_enregistrees ADD COLUMN liens TEXT NULL;

@@ -1,0 +1,24 @@
+{
+  "cle": "nuit",
+  "nom": "Nuit",
+  "description": "Les mêmes teintes dans l'autre sens : encre claire sur fond sombre. Pour travailler le soir sans éblouir la pièce.",
+  "sombre": true,
+  "accent_par_defaut": "#3e5c46",
+  "variables": {
+    "--bg-app": "#181a16",
+    "--bg-panel": "#212420",
+    "--bg-panel-alt": "#282b26",
+    "--ink": "#e9e7dd",
+    "--ink-soft": "#b3b3a4",
+    "--ink-faint": "#82857a",
+    "--amber": "#d9a441",
+    "--amber-soft": "#3d3323",
+    "--brick": "#d47a6a",
+    "--brick-soft": "#3f2823",
+    "--data": "#4fae7c",
+    "--data-soft": "#25382e",
+    "--line": "#33362f",
+    "--line-strong": "#4a4d43",
+    "--shadow-panel": "0 12px 32px -12px rgba(0, 0, 0, 0.6)"
+  }
+}

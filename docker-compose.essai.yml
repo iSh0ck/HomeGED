@@ -1,0 +1,141 @@
+# Installation jetable, pour éprouver un premier démarrage (§18.31).
+#
+# Tout y est séparé de l'installation réelle : projet Docker distinct, volumes
+# nommés (aucun montage vers ./storage, ./ocr_wait ou ./exports), ports décalés,
+# base à part. On peut donc la détruire d'un mot sans rien risquer — c'est même
+# le but : une installation dont on peut recommencer le premier démarrage autant
+# de fois qu'on veut.
+#
+#   ./scripts_essai.sh demarrer   → http://localhost:8082
+#   ./scripts_essai.sh recommencer→ efface tout et repart d'une base vierge
+#   ./scripts_essai.sh detruire   → ne laisse rien derrière
+#
+# Les valeurs sont écrites en clair, sans reprendre `.env` : cette installation
+# ne contient rien qui vaille d'être protégé, et un fichier autonome évite qu'un
+# réglage de la vraie installation s'y invite par mégarde.
+
+x-journalisation: &journalisation
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "2"
+
+services:
+  db:
+    image: mariadb:12
+    restart: unless-stopped
+    logging: *journalisation
+    environment:
+      MARIADB_ROOT_PASSWORD: essai_root
+      # `homeged` et non « homeged_essai » : le fichier db/schema.sql, joué au
+      # premier démarrage, contient `CREATE DATABASE homeged; USE homeged;`. Une
+      # base nommée autrement resterait vide, et l'API démarrerait sur un schéma
+      # inexistant — ce qui est arrivé au premier essai, et que cette
+      # installation jetable a permis de voir avant qu'un foyer ne le découvre.
+      MARIADB_DATABASE: homeged
+      MARIADB_USER: homeged
+      MARIADB_PASSWORD: essai
+    volumes:
+      - db_essai:/var/lib/mysql
+      # Pas de schéma monté dans /docker-entrypoint-initdb.d/ : c'est délibéré.
+      # L'application installe elle-même son schéma sur une base vierge (§18.31),
+      # et cette installation d'essai sert justement à le vérifier — un foyer qui
+      # déploie ailleurs ne doit dépendre ni des droits de lecture d'un fichier
+      # de l'hôte, ni d'un montage qu'il aurait oublié.
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      # Plus long que sur l'installation réelle : ici la base **se crée**, et le
+      # premier démarrage de MariaDB joue db/schema.sql avant d'accepter la
+      # moindre connexion. Trente secondes suffisaient pour une base existante,
+      # pas pour une base qui naît.
+      start_period: 120s
+    ports:
+      # Un port de plus que l'installation réelle, partout : 3308 face à 3307,
+      # 8002 face à 8001, 8082 face à 8081. On lit d'un coup d'œil à quoi on
+      # parle, et les deux installations ne se disputent jamais un port.
+      # Sur 127.0.0.1 seulement, comme l'autre : une base d'essai reste une base.
+      - "127.0.0.1:3308:3306"
+
+  worker:
+    build: .
+    restart: unless-stopped
+    logging: *journalisation
+    command: python -m app.worker
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: homeged
+      DB_PASSWORD: essai
+      DB_NAME: homeged
+      OCR_WAIT_FOLDER: /data/ocr_wait
+      STORAGE_FOLDER: /data/storage
+      EXPORT_FOLDER: /data/exports
+    volumes:
+      - ocr_wait_essai:/data/ocr_wait
+      - storage_essai:/data/storage
+
+  api:
+    build: .
+    restart: unless-stopped
+    logging: *journalisation
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: homeged
+      DB_PASSWORD: essai
+      DB_NAME: homeged
+      SECRET_KEY: cle-d-essai-jetable-suffisamment-longue-pour-demarrer
+      # Aucun compte n'est créé au démarrage : c'est ce qui laisse la main à
+      # l'assistant de première installation (§18.23). Le mot de passe est
+      # volontairement celui d'exemple — `creer_admin_si_absent` s'abstient
+      # devant lui, et c'est précisément le comportement qu'on veut éprouver.
+      ADMIN_EMAIL: admin@essai.local
+      ADMIN_PASSWORD: changeme
+      COOKIE_SECURE: "false"
+      # L'interface et l'API partagent la même origine derrière nginx : ces
+      # origines ne servent qu'à un poste de développement qui attaquerait
+      # l'API directement.
+      CORS_ORIGINS: http://localhost:8082,http://192.168.54.111:8082
+      STORAGE_FOLDER: /data/storage
+      EXPORT_FOLDER: /data/exports
+    volumes:
+      - storage_essai:/data/storage
+      - exports_essai:/data/exports
+    ports:
+      - "127.0.0.1:8002:8000"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    logging: *journalisation
+    depends_on:
+      - api
+    volumes:
+      # nginx écrit son journal d'accès dans un fichier (c'est la source de
+      # fail2ban) : sans ce point de montage, le dossier n'existe pas et nginx
+      # refuse de démarrer. Deuxième dépendance à l'hôte que cette installation
+      # d'essai aura mise au jour.
+      - logs_essai:/var/log/homeged
+    ports:
+      # Sur toutes les interfaces, comme l'installation réelle (8081) : l'essai
+      # se regarde depuis un autre poste du foyer, pas seulement depuis le
+      # serveur. À savoir : tant qu'aucun compte n'y existe, l'assistant de
+      # première installation est ouvert à qui atteint ce port — sur cette
+      # installation jetable c'est sans conséquence, mais c'est la même mécanique
+      # qui protégera la vraie.
+      - "8082:80"
+
+volumes:
+  db_essai:
+  logs_essai:
+  storage_essai:
+  ocr_wait_essai:
+  exports_essai:

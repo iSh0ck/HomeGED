@@ -1,0 +1,9 @@
+# Dépendances de test uniquement — pas embarquées dans l'image applicative.
+pytest==8.3.3
+# Le client de test de Starlette est passé à httpx2 ; garder httpx 0.27 revenait
+# à faire tourner la suite sur un chemin déprécié en amont.
+httpx2==2.12.0
+# Exécution en parallèle (§18.34). La suite tourne sur une base par
+# processus : sans cela, deux tests qui reconstruisent le schéma en même temps
+# se marcheraient dessus.
+pytest-xdist==3.6.1

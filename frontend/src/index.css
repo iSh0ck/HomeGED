@@ -1,0 +1,288 @@
+:root {
+  /* Couleurs — palette "classeur" */
+  --bg-app: #eae7dd;
+  --bg-panel: #fffdf8;
+  --bg-panel-alt: #f4f1e8;
+  --ink: #22281f;
+  --ink-soft: #5b5f52;
+  --ink-faint: #8a8d7d;
+  --accent: #3e5c46;      /* vert chemise cartonnée — sélection, actions primaires */
+  --accent-soft: #cddac9;
+  --amber: #c68a34;       /* statut en attente */
+  --amber-soft: #f2e2c4;
+  --brick: #a23b2e;       /* erreur / urgent */
+  --brick-soft: #f0d9d3;
+  /* Teinte des marques de graphique. Distincte de --accent, qui sert au
+     chrome de l'interface : à 0,051 de chroma, l'accent rendrait gris en
+     aplat. Celle-ci passe les contrôles de chroma et de contraste sur
+     --bg-panel (validateur de palette). Une seule teinte par graphique : les
+     répartitions comparent une grandeur, pas des identités. */
+  --data: #2e7d51;
+  --data-soft: #d7e8dd;
+
+  --line: #d8d3c4;
+  --line-strong: #b9b39f;
+  --shadow-panel: 0 12px 32px -12px rgba(34, 40, 31, 0.35);
+
+  /* Typo */
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius: 3px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-app);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------
+   Animations partagées.
+   Toutes partent d'un décalage faible et d'une durée courte : il s'agit
+   d'accompagner l'apparition d'un élément, pas de la mettre en scène.
+   ------------------------------------------------------------------ */
+
+@keyframes apparition-montante {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes apparition-simple {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Refus : un mouvement bref, de faible amplitude, qui dit « non » sans
+   faire sauter la page. */
+@keyframes refus {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(2px); }
+}
+
+@keyframes rotation {
+  to { transform: rotate(360deg); }
+}
+
+/* Champs de saisie du projet.
+   
+   Le focus se signale par un halo plutôt que par le contour par défaut du
+   navigateur, qui change d'un navigateur à l'autre et jure avec le reste. La
+   règle porte sur `input` et `textarea` directement : les champs du projet
+   portent leur mise en page en style en ligne, mais leur *comportement* visuel
+   n'a aucune raison d'être répété soixante fois — et un champ ajouté demain
+   l'aura sans qu'on y pense.
+   
+   Les cases à cocher et les boutons radio sont exclus : leur halo carré autour
+   d'un carré de 13 px est disgracieux, et le navigateur les dessine
+   correctement. */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+.champ-projet {
+  transition: border-color 160ms, box-shadow 160ms, background 160ms;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+textarea:focus,
+.champ-projet:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--bg-panel);
+}
+
+/* Le curseur de saisie prend la teinte de l'application plutôt que le noir
+   système : détail, mais c'est de ces détails qu'une interface a l'air finie. */
+input, textarea { caret-color: var(--accent); }
+
+/* Un champ désactivé doit se voir comme tel sans devenir illisible. */
+input:disabled, textarea:disabled { opacity: 0.6; cursor: not-allowed; }
+
+::placeholder { color: var(--ink-faint); opacity: 1; }
+
+.apparition-voile { animation: apparition-simple 160ms ease-out both; }
+.apparition {
+  animation: apparition-montante 420ms cubic-bezier(0.22, 0.7, 0.35, 1) both;
+}
+
+.refus {
+  animation: refus 320ms ease-in-out;
+}
+
+.rotation {
+  animation: rotation 800ms linear infinite;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Respect du réglage système « réduire les animations ».
+   `animation-iteration-count` est indispensable ici : sans lui, une animation
+   déclarée en boucle infinie continuerait de tourner — à 0,01 ms par cycle,
+   soit un scintillement permanent, pire que l'animation d'origine. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Champs de recherche des colonnes (§18.14).
+   La loupe reste effacée tant qu'on ne s'occupe pas de la colonne : cinq loupes
+   en rang attirent l'œil sans rien lui apprendre. Elle apparaît au survol, à la
+   saisie, et reste visible quand un filtre est posé. */
+.filtre-loupe {
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.filtre-colonne:hover .filtre-loupe,
+.filtre-colonne:focus-within .filtre-loupe,
+.filtre-loupe.active {
+  opacity: 1;
+}
+
+/* Le halo de focus des champs de saisie (plus haut) dessine un rectangle autour
+   du champ. Sur un champ encadré c'est juste ; sur ceux de la rangée de filtres,
+   qui n'ont plus de cadre, il en fait réapparaître un au moment même où l'on
+   écrit. Le trait sous le champ suffit : il passe en couleur d'accent et
+   s'épaissit, ce qui se voit sans rien dessiner autour.
+
+   La chaîne de `:not()` est reprise telle quelle, et ce n'est pas une coquetterie :
+   sans elle, cette règle **perd** contre la règle générale. Chaque `:not()` compte
+   dans le poids d'un sélecteur, si bien que `input:not(…):not(…):focus` pèse plus
+   qu'une simple classe. Ma première version était plus courte et plus lisible —
+   et sans effet. */
+.filtre-colonne input:not([type="checkbox"]):not([type="radio"]):focus,
+.filtre-colonne input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+.filtre-colonne .champ-projet:focus,
+.filtre-colonne .champ-projet:focus-visible,
+.filtre-colonne button:focus-visible,
+.filtre-colonne *:focus,
+.filtre-colonne *:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+  background: transparent;
+}
+
+/* En contrepartie du halo retiré, le trait doit marcher pour **tout** ce qui
+   prend le focus dans la cellule — le champ, mais aussi la flèche du menu ou le
+   bouton d'effacement, atteints au clavier. Le trait de repos est posé en style
+   en ligne par le composant ; `!important` est ici le seul moyen de passer
+   devant, et c'est un cas où il se justifie : la règle est plus spécifique par
+   nature, pas par accident. */
+.filtre-colonne:focus-within {
+  border-bottom-color: var(--accent) !important;
+  box-shadow: inset 0 -1px 0 var(--accent) !important;
+}
+
+/* Densité du tableau (§18.24). Le réglage se pose sur <html> ; les cellules
+   lisent cette variable plutôt que d'être recalculées par le composant. */
+:root {
+  --cellule-hauteur: 9px;
+}
+html[data-densite="compacte"] {
+  --cellule-hauteur: 4px;
+}
+
+/* ------------------------------------------------------------------
+   Téléphone et tablette (§22.52)
+
+   L'interface est écrite en styles en ligne : ces règles ne peuvent donc pas
+   corriger une mise en page, seulement ce qui n'est pas posé en ligne — la
+   taille du texte, les cibles tactiles, les débordements. Les dispositions,
+   elles, se décident dans les composants avec `useEcran()`.
+   ------------------------------------------------------------------ */
+
+/* Un doigt n'a pas la précision d'une souris : sous cette largeur, les boutons
+   reçoivent une hauteur minimale plutôt qu'une taille au pixel près. */
+@media (max-width: 820px) {
+  button,
+  select,
+  [role="button"] {
+    min-height: 34px;
+  }
+
+  /* Les champs à moins de 16 px déclenchent un zoom automatique sur iOS, et la
+     page reste zoomée après la saisie. Seize pixels, donc, et la mise en page
+     ne bouge plus sous les doigts. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* Rien ne doit déborder latéralement : sur un téléphone, un débordement de
+     dix pixels se traduit par une page entière qui glisse. */
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Les barres de défilement fines conviennent à une souris ; au doigt, on ne les
+   attrape pas. Le système en dessine de plus larges, on le laisse faire. */
+@media (pointer: coarse) {
+  .scrollbar-thin {
+    scrollbar-width: auto;
+  }
+}

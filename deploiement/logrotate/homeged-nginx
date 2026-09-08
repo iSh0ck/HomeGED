@@ -1,0 +1,24 @@
+# Rotation du journal d'accès nginx de HomeGED.
+#
+# Ce fichier échappe à la rotation de Docker : Docker ne fait tourner que ce
+# qu'il collecte lui-même sur la sortie standard, pas un fichier écrit dans un
+# volume. Sans ce réglage, `acces.log` grossirait sans fin.
+#
+# `copytruncate` est volontairement écarté : il perd les lignes écrites pendant
+# la copie, et fail2ban n'aime pas les fichiers tronqués sous lui. On préfère
+# renommer puis demander à nginx de rouvrir ses journaux.
+#
+# À installer dans /etc/logrotate.d/homeged-nginx (chemin à adapter).
+
+/home/shk/homeged/logs/nginx/acces.log {
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 root root
+    postrotate
+        /usr/bin/docker compose -f /home/shk/homeged/docker-compose.yml exec -T frontend nginx -s reopen > /dev/null 2>&1 || true
+    endscript
+}
