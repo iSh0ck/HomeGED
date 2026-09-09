@@ -9,11 +9,7 @@ Ce n'est pas un service en ligne : c'est **votre machine, vos fichiers**. Quatre
 conteneurs Docker, une base MariaDB, et les PDF sur votre disque, lisibles sans
 l'application.
 
-> 📸 **Capture à placer ici  `docs/images/registre.png`**
-> Le registre, ouvert sur un type de document. On doit y voir : la navigation à
-> gauche (dossiers, types, vues enregistrées), la barre de recherche en haut, le
-> tableau avec ses colonnes propres au type (émetteur, date, montant, numéro), la
-> rangée de filtres sous les intitulés, et une fiche de document ouverte en bas.
+![Le registre](docs/images/registre.png)
 
 ## Ce que ça fait, concrètement
 
@@ -26,20 +22,11 @@ l'application.
 | **Ne rien perdre** | Corbeille, versions, contrôle d'intégrité des archives, journal d'audit, et une copie de secours réglable. |
 | **Chacun ses papiers** | Comptes, rôles, droits par catégorie et par action, double authentification. |
 
-> 📸 **Capture à placer ici  `docs/images/analyse.png`**
-> Le Centre d'analyse. On doit y voir : un document incomplet avec le champ
-> manquant surligné, le formulaire de correction à côté de l'aperçu de la page,
-> et la section « À classer » listant un fichier dont le type reste à dire.
+![Le registre](docs/images/analyse.png)
 
-> 📸 **Capture à placer ici  `docs/images/tableau-de-bord.png`**
-> Le tableau de bord d'accueil : les cases chiffrées (documents, ce mois-ci, à
-> reprendre, non classés), la répartition par catégorie et la courbe des
-> arrivées sur douze mois.
+![Le registre](docs/images/tableau-de-bord.png)
 
-> 📸 **Capture à placer ici  `docs/images/admin-champs.png`**
-> L'administration, écran « Assembler un type ». On doit y voir les quatre
-> étapes  ce que le document porte, ce qui se remplit tout seul, les colonnes,
-> les règles  et l'état de chaque champ attendu.
+![Le registre](docs/images/admin-champs.png)
 
 **Le classement ne se devine pas : il se déclare.** L'arborescence distingue les
 **dossiers**, qui organisent, des **types de document**, qui portent les
