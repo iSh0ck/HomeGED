@@ -101,7 +101,7 @@ Documentation interactive : `http://localhost:8001/docs`.
 
 ## Documentation
 
-Le [wiki](wiki/) contient les procédures détaillées, séparées selon qui les lit :
+Le [wiki](https://github.com/iSh0ck/HomeGED/wiki) contient les procédures détaillées, séparées selon qui les lit :
 
 * **pour qui s'en sert**  premiers pas, déposer, chercher, le Centre d'analyse,
   son compte ;
